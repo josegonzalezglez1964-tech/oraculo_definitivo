@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let guardados = JSON.parse(localStorage.getItem('bitacoraCanaria')) || [];
             guardados.push(nuevaCombinacion);
-            localStorage.setItem('bitacariaCanaria', JSON.stringify(guardados));
+            localStorage.setItem('bitacoraCanaria', JSON.stringify(guardados));
 
             btnSave.style.display = 'none';
             cargarBitacora();
