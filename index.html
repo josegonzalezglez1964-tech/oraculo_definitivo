@@ -50,12 +50,12 @@
             background: radial-gradient(circle at top, #292524 0%, #0c0a09 70%);
         }
         .hero h1 { 
-    font-size: 2.2rem; 
-    font-weight: 600; 
-    margin-bottom: 32px; 
-    letter-spacing: 4px;
-    text-transform: uppercase;
-}
+            font-size: 2.2rem; 
+            font-weight: 600; 
+            margin-bottom: 32px; 
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
         @media(min-width: 768px) { .hero h1 { font-size: 4.5rem; } }
         
         .oraculo-pantalla {
@@ -68,16 +68,16 @@
         }
         .oraculo-sub { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; margin-bottom: 12px; }
         .oraculo-frase { 
-    font-family: 'Cinzel', serif;
-    font-size: 2.6rem; 
-    text-transform: uppercase;
-    color: var(--text-main); 
-    font-weight: 400; 
-    margin-bottom: 24px; 
-    min-height: 60px; 
-    line-height: 1.4;
-    letter-spacing: 2px;
-}
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem; 
+            text-transform: uppercase;
+            color: var(--text-main); 
+            font-weight: 400; 
+            margin-bottom: 24px; 
+            min-height: 60px; 
+            line-height: 1.4;
+            letter-spacing: 2px;
+        }
         .oraculo-firma { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: center; gap: 10px; }
 
         .weather-strip {
@@ -172,16 +172,37 @@
         .mini-ball { width: 34px; height: 34px; border-radius: 50%; background: rgba(245,158,11,0.1); border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; font-family: 'Space Mono', monospace;}
         .mini-ball.cold { border-color: #3b82f6; background: rgba(59,130,246,0.1); color: #60a5fa; }
         .progress-bar { flex: 1; margin: 0 16px; height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--accent); width: 0; transition: width 1s ease-in-out; }
-        .progress-fill.cold { background: #3b82f6; }
+        
+        .progress-fill { 
+            height: 100%; 
+            background: var(--accent); 
+            width: 0; 
+            transition: width 1s ease-in-out; 
+        }
+        .progress-fill.cold { 
+            background: #3b82f6; 
+        }
 
-        .draw-history-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-        .draw-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; }
-
-        .empty-state { border: 2px dashed var(--border); padding: 40px; text-align: center; border-radius: 12px; color: var(--text-dark); font-family: 'Space Mono', monospace; }
-        .saved-list-container { margin-top: 24px; list-style: none; display: flex; flex-direction: column; gap: 16px; }
+        /* --- ARREGLO INTEGRAL PARA LA FRANJA DEL MENSAJE MÍSTICO (#cli-consejo) --- */
+        #cli-consejo {
+            display: block !important;
+            width: 100%;
+            max-width: 1280px;
+            margin: 24px auto !important;
+            padding: 16px 24px !important;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--accent);
+            background: rgba(28, 25, 23, 0.8);
+            border: 1px dashed rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            line-height: 1.6 !important;
+            overflow: visible !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
+
 <body>
     <header class="hero">
         <div class="max-w-4xl">
