@@ -1,16 +1,18 @@
 // =========================================================================
-// ORÁCULO DEFINITIVO - SCRIPT MÍSTICO & ESTADÍSTICO DE SUERTE CANARIA (ONCE)
+// ORÁCULO DEFINITIVO - PARTE 1: CONFIGURACIÓN, CLIMA REAL & ENERGÍAS
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Inicializaciones del Estado del Clima e Influencia de la Fortuna ---
-    const climaActual = {
+    // --- Estado de la Aplicación ---
+    let climaActual = {
         temperatura: 22,
         viento: 18,
-        marea: 'Alta',
-        faseLunar: '',
-        iconoLuna: '🌕'
+        estado: 'Despejado',
+        icono: '☀️'
     };
+    
+    let combinacionActual = [];
+    let energiaSeleccionada = "Calma Marina";
 
     // --- Base de Datos Mística de Frases (Suerte Canaria) ---
     const frasesMisticas = [
@@ -24,359 +26,241 @@ document.addEventListener('DOMContentLoaded', () => {
         "Un cupón en tus manos no es solo papel, es el vehículo de un sueño que la ONCE bendice hoy."
     ];
 
-    // --- Configuración y Lógica de Sorteos Oficiales de la ONCE ---
     const configuracionJuegos = {
         superonce: { min: 1, max: 85, cantidad: 11, nombre: "Super Once" },
-        triplex:   { min: 0, max: 9,  cantidad: 3,  nombre: "Triplex", repetir: true },
-        midia:     { min: 1, max: 31, cantidad: 1,  nombre: "Mi Día (Día)", extra: "Mes y Año" },
+        triplex:   { min: 0, max: 9,  cantidad: 3,  nombre: "Triplex" },
+        midia:     { min: 1, max: 31, cantidad: 1,  nombre: "Mi Día" },
         dupla:     { min: 0, max: 9,  cantidad: 2,  nombre: "Dupla" }
     };
 
-    // --- Elementos de la Interfaz (DOM) ---
+    // --- Elementos del DOM ---
     const txtOraculo       = document.getElementById('oraculo-texto');
     const txtFecha         = document.getElementById('oraculo-fecha');
     const btnGenerate      = document.getElementById('btn-generate');
     const ballsOutput      = document.getElementById('balls-output');
     const btnSave          = document.getElementById('btn-save');
     const selectJuego      = document.getElementById('game-select');
+    const selectSigno      = document.getElementById('signo-select');
     const btnsEnergia      = document.querySelectorAll('.btn-option');
     const consejoOnce      = document.getElementById('cli-consejo');
     const listaGuardados   = document.getElementById('saved-list');
     const emptyState       = document.getElementById('empty-state');
-    const containerLuna    = document.getElementById('cli-luna');
-    const icoLuna          = document.getElementById('cli-estado-ico');
 
-    let combinacionActual = [];
-    let energiaSeleccionada = "Calma Marina";
+    // Elementos de la barra de Clima
+    const elTemp           = document.getElementById('cli-temp');
+    const elViento         = document.getElementById('cli-viento');
+    const elEstado         = document.getElementById('cli-estado');
+    const elIcono          = document.getElementById('cli-estado-ico');
 
     // ==========================================
-    // 1. MOTOR DE ENERGÍA Y EVENTOS DE INTERFAZ
+    // 1. CONEXIÓN API DE CLIMA REAL (EL PINAR DE EL HIERRO)
     // ==========================================
-    
-    // Cambiar entre energías místicas
+    async function consultarClimaReal() {
+        // Coordenadas exactas de El Pinar de El Hierro
+        const lat = 27.7024;
+        const lon = -17.9781;
+        const url = `https://open-meteo.com{lat}&longitude=${lon}&current_weather=true`;
+
+        try {
+            const respuesta = await fetch(url);
+            const datos = await respuesta.json();
+            const tiempo = datos.current_weather;
+
+            climaActual.temperatura = Math.round(tiempo.temperature);
+            climaActual.viento = Math.round(tiempo.windspeed);
+            
+            const code = tiempo.weathercode;
+            if (code === 0) { climaActual.estado = "Despejado"; climaActual.icono = "☀️"; }
+            else if (code <= 3) { climaActual.estado = "Nublado"; climaActual.icono = "⛅"; }
+            else if (code <= 48) { climaActual.estado = "Niebla mística"; climaActual.icono = "🌫️"; }
+            else { climaActual.estado = "Lluvia de abundancia"; climaActual.icono = "🌧️"; }
+
+            actualizarInterfazClima();
+        } catch (error) {
+            console.log("Usando clima místico local por desconexión de red.");
+            actualizarInterfazClima();
+        }
+    }
+
+    function actualizarInterfazClima() {
+        if(elTemp) elTemp.textContent = `${climaActual.temperatura}°C`;
+        if(elViento) elViento.textContent = `${climaActual.viento} km/h`;
+        if(elEstado) elEstado.textContent = climaActual.estado;
+        if(elIcono) elIcono.textContent = climaActual.icono;
+        
+        const elMarea = document.getElementById('cli-marea');
+        if (elMarea) {
+            elMarea.textContent = new Date().getHours() % 12 < 6 ? "Alta" : "Baja";
+        }
+        
+        actualizarFraseConsejo();
+    }
+
+    function actualizarFraseConsejo() {
+        if (consejoOnce) {
+            consejoOnce.textContent = `✨ Energía [${energiaSeleccionada}]: El oráculo se rige por vientos de El Pinar a ${climaActual.viento} km/h y ambiente ${climaActual.estado}. Propicio para apuestas intuitivas.`;
+        }
+    }
+
+    // ==========================================
+    // 2. MOTOR DE ENERGÍAS Y PESTAÑAS
+    // ==========================================
     btnsEnergia.forEach(btn => {
-        if (!btn.id && btn.getAttribute('data-tab') === null && btn.id !== 'btn-save') { 
+        if (!btn.id && !btn.dataset.tab) { 
             btn.addEventListener('click', (e) => {
-                // Remover clase activa de los hermanos de energía
-                btnsEnergia.forEach(b => { if(!b.id && !b.dataset.tab && b.id !== 'btn-save') b.classList.remove('active'); });
+                btnsEnergia.forEach(b => { if(!b.id && !b.dataset.tab) b.classList.remove('active'); });
                 e.target.classList.add('active');
                 energiaSeleccionada = e.target.textContent.trim();
-                actualizarPrediccionConsejo();
+                actualizarFraseConsejo();
             });
         }
     });
 
-    // Control de Pestañas (Calientes, Fríos, Historial)
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetTab = btn.getAttribute('data-tab');
-            
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
-            
             btn.classList.add('active');
             document.getElementById(`tab-${targetTab}`).classList.add('active');
         });
     });
-
-        // ==========================================
-    // 2. CÁLCULO MÍSTICO DE LA FASE LUNAR REAL
     // ==========================================
-    function calcularFaseLunarReal() {
-        const fechaActual = new Date();
-        const year = fechaActual.getFullYear();
-        const month = fechaActual.getMonth() + 1;
-        const day = fechaActual.getDate();
-
-        // Algoritmo del ciclo lunar
-        let yearBase = year;
-        let monthBase = month;
-        if (monthBase < 3) { yearBase--; monthBase += 12; }
-        monthBase++;
-        
-        const c = 365.25 * yearBase;
-        const e = 30.6 * monthBase;
-        let j = c + e + day - 694039.09;
-        j /= 29.5305882; 
-        const ip = j - Math.floor(j); 
-        const edadLunar = ip * 29.53;
-
-        let fase = "Luna Llena de Fortuna 🌕";
-        let icono = "🌕";
-
-        if (edadLunar < 1.84)   { fase = "Luna Nueva 🌑"; icono = "🌑"; }
-        else if (edadLunar < 5.53)  { fase = "Creciente Iluminada 🌒"; icono = "🌒"; }
-        else if (edadLunar < 9.22)  { fase = "Cuarto Creciente 🌓"; icono = "🌓"; }
-        else if (edadLunar < 12.91) { fase = "Gibosa Creciente 🌔"; icono = "🌔"; }
-        else if (edadLunar < 16.61) { fase = "Luna Llena de Fortuna 🌕"; icono = "🌕"; }
-        else if (edadLunar < 20.30) { fase = "Gibosa Menguante 🌖"; icono = "🌖"; }
-        else if (edadLunar < 23.99) { fase = "Cuarto Menguante 🌗"; icono = "🌗"; }
-        else if (edadLunar < 27.68) { fase = "Menguante Mística 🌘"; icono = "🌘"; }
-
-        climaActual.faseLunar = fase;
-        climaActual.iconoLuna = icono;
-
-        // Inyección ultra-segura en el HTML comprobando los ID
-        const elLunaTxt = document.getElementById('cli-luna');
-        const elLunaIco = document.getElementById('cli-luna-ico');
-        
-        if (elLunaTxt) elLunaTxt.textContent = fase;
-        if (elLunaIco) elLunaIco.textContent = icono;
-
-        generarNumerosEstadisticosEstacionales(edadLunar);
-    }
-
-    // ==========================================
-    // 3. GENERADOR DE NÚMEROS ESTADÍSTICOS (CALIENTES/FRÍOS)
-    // ==========================================
-    function generarNumerosEstadisticosEstacionales(edadLunar) {
-        // Modifica dinámicamente las barras de progreso laterales simulando estadísticas de la ONCE
-        const hotTab = document.getElementById('tab-hot');
-        const coldTab = document.getElementById('tab-cold');
-        
-        let semillaBase = Math.floor(edadLunar) + climaActual.temperatura;
-        
-        // Generar 2 números calientes basados místicamente en el día
-        let numCaliente1 = (semillaBase % 49) + 1;
-        let numCaliente2 = ((semillaBase * 3) % 85) + 1;
-        if(numCaliente1 === numCaliente2) numCaliente2++;
-
-        // Generar 2 números fríos
-        let numFrio1 = ((semillaBase + 17) % 80) + 1;
-        let numFrio2 = ((semillaBase * 7) % 9) + 1;
-
-        hotTab.innerHTML = `
-            <div class="stat-row">
-                <div class="mini-ball">${numCaliente1.toString().padStart(2, '0')}</div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 88%;"></div></div>
-                <span class="font-mono">88%</span>
-            </div>
-            <div class="stat-row">
-                <div class="mini-ball">${numCaliente2.toString().padStart(2, '0')}</div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 76%;"></div></div>
-                <span class="font-mono">76%</span>
-            </div>
-        `;
-
-        coldTab.innerHTML = `
-            <div class="stat-row">
-                <div class="mini-ball cold">${numFrio1.toString().padStart(2, '0')}</div>
-                <div class="progress-bar"><div class="progress-fill cold" style="width: 14%;"></div></div>
-                <span class="font-mono">14%</span>
-            </div>
-            <div class="stat-row">
-                <div class="mini-ball cold">${numFrio2.toString().padStart(2, '0')}</div>
-                <div class="progress-bar"><div class="progress-fill cold" style="width: 21%;"></div></div>
-                <span class="font-mono">21%</span>
-            </div>
-        `;
-    }
-
-    // Actualiza el consejo dinámico inferior según la energía y juego de la ONCE elegido
-    function actualizarPrediccionConsejo() {
-        const juego = selectJuego.value;
-        let msg = `✨ Energía [${energiaSeleccionada}]: `;
-        
-        if (juego === 'superonce') msg += "El Super Once se rige hoy por corrientes profundas. Ideal para apuestas estables.";
-        else if (juego === 'triplex') msg += "Numerología rápida. Tres ráfagas de viento Alisio configuran tu suerte directa.";
-        else if (juego === 'midia') msg += "Tu fecha cósmica se cruza con las fases lunares del meridiano de El Hierro.";
-        else msg += "Dupla activa. Dos fuerzas sagradas de la naturaleza empujan tu boleto ganador.";
-        
-        if(consejoOnce) consejoOnce.textContent = msg;
-    }
-
-    selectJuego.addEventListener('change', actualizarPrediccionConsejo);
-
-    // ==========================================
-    // 4. MOTOR PRINCIPAL GENERADOR DEL ORÁCULO
+    // 3. GENERADOR DE PREDICCIONES CON HORÓSCOPO
     // ==========================================
     btnGenerate.addEventListener('click', () => {
-        const juegoSeleccionado = selectJuego.value;
-        const config = configuracionJuegos[juegoSeleccionado];
+        if (!selectJuego || !selectSigno) return;
+        const juego = selectJuego.value;
+        const config = configuracionJuegos[juego];
+        const signoTexto = selectSigno.options[selectSigno.selectedIndex].text;
         
+        btnGenerate.style.transform = "scale(0.95)";
+        setTimeout(() => btnGenerate.style.transform = "scale(1)", 150);
+
+        txtOraculo.textContent = `“ ${frasesMisticas[Math.floor(Math.random() * frasesMisticas.length)]} ”`;
+
+        const semillaSigno = selectSigno.value.length + climaActual.temperatura;
         combinacionActual = [];
-        ballsOutput.innerHTML = ""; // Limpiar bolas anteriores
-
-        // Factor astrológico y climatológico para alterar sutilmente el azar aleatorio
-        let factorMistico = energiaSeleccionada === "Fuerza Volcánica" ? 5 : (energiaSeleccionada === "Viento Alisio" ? 2 : 0);
-
-        if (juegoSeleccionado === 'midia') {
-            // Caso especial: Mi Día de la ONCE requiere Día (1-31) + Mes Extra + Año Extra ficticios o sugeridos místicamente
-            let dia = Math.floor(Math.random() * config.max) + config.min;
-            combinacionActual.push(dia);
-            
-            // Renderizar la bola del día principal
-
-                        crearBolaAnimada(dia, false);
-            
-            const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-            let mesSugerido = meses[Math.floor(Math.random() * 12)];
-            let anoSugerido = Math.floor(Math.random() * 3) + 2026; 
-
-            const extraDiv = document.createElement('div');
-            extraDiv.style.color = "var(--accent)";
-            extraDiv.style.fontFamily = "var(--font-mono)";
-            extraDiv.style.fontSize = "0.9rem";
-            extraDiv.style.marginTop = "12px";
-            extraDiv.innerHTML = `📅 Fecha Mística sugerida: <strong>${dia} de ${mesSugerido} de ${anoSugerido}</strong>`;
-            ballsOutput.appendChild(extraDiv);
-
+        
+        if (juego === 'midia') {
+            const diaSurgido = ((Math.floor(Math.random() * 31) + semillaSigno) % 31) + 1;
+            combinacionActual.push(diaSurgido);
         } else {
             while (combinacionActual.length < config.cantidad) {
-                let num = Math.floor(Math.random() * (config.max - config.min + 1)) + config.min;
-                if (config.repetir) {
-                    combinacionActual.push(num);
-                } else {
-                    if (!combinacionActual.includes(num)) {
-                        combinacionActual.push(num);
-                    }
+                let numero = ((Math.floor(Math.random() * config.max) + semillaSigno) % (config.max - config.min + 1)) + config.min;
+                if (!combinacionActual.includes(numero)) {
+                    combinacionActual.push(numero);
                 }
             }
-
-            if (juegoSeleccionado !== 'triplex' && juegoSeleccionado !== 'dupla') {
-                combinacionActual.sort((a, b) => a - b);
-            }
-
-            combinacionActual.forEach((num, index) => {
-                setTimeout(() => {
-                    crearBolaAnimada(num, false);
-                }, index * 80);
-            });
+            combinacionActual.sort((a, b) => a - b);
         }
 
-        btnSave.style.display = "block";
-        añadirAlHistorialLateral(config.nombre, combinacionActual);
+        ballsOutput.innerHTML = '';
+        combinacionActual.forEach((num, index) => {
+            const ball = document.createElement('div');
+            ball.className = 'ball';
+            ball.style.animationDelay = `${index * 0.08}s`;
+            ball.textContent = num.toString().padStart(2, '0');
+            ballsOutput.appendChild(ball);
+        });
+
+        if (btnSave) btnSave.style.display = 'block';
+        if (consejoOnce) {
+            consejoOnce.textContent = `🔮 Alineación Astral con ${signoTexto}. Tus números sagrados para el ${config.nombre} han sido bendecidos.`;
+        }
     });
 
-    function crearBolaAnimada(numero, esClon) {
-        const ball = document.createElement('div');
-        ball.className = 'ball';
-        ball.textContent = numero.toString().padStart(2, '0');
-        ballsOutput.appendChild(ball);
+    // ==========================================
+    // 4. SISTEMA DE BITÁCORA (LOCALSTORAGE)
+    // ==========================================
+    if (btnSave) {
+        btnSave.addEventListener('click', () => {
+            if (combinacionActual.length === 0) return;
+
+            const juegoTexto = selectJuego.options[selectJuego.selectedIndex].text;
+            const signoTexto = selectSigno.options[selectSigno.selectedIndex].text;
+            const nuevaCombinacion = {
+                id: Date.now(),
+                juego: juegoTexto,
+                signo: signoTexto,
+                numeros: [...combinacionActual],
+                fecha: new Date().toLocaleDateString('es-ES')
+            };
+
+            let guardados = JSON.parse(localStorage.getItem('bitacoraCanaria')) || [];
+            guardados.push(nuevaCombinacion);
+            localStorage.setItem('bitacariaCanaria', JSON.stringify(guardados));
+
+            btnSave.style.display = 'none';
+            cargarBitacora();
+        });
     }
 
-        // ==========================================
-    // 5. SISTEMA DE BITÁCORA / GUARDADO LOCAL
-    // ==========================================
-    btnSave.addEventListener('click', () => {
-        if (combinacionActual.length === 0) return;
-
-        const juegoId = selectJuego.value;
-        const juegoNombre = configuracionJuegos[juegoId].nombre;
-        const fechaYHora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const nuevaPrediccion = {
-            juego: juegoNombre,
-            numeros: [...combinacionActual],
-            hora: fechaYHora,
-            energia: energiaSeleccionada
-        };
-
-        let guardados = JSON.parse(localStorage.getItem('oraculo_guardados')) || [];
-        guardados.unshift(nuevaPrediccion);
-        localStorage.setItem('oraculo_guardados', JSON.stringify(guardados));
-
-        renderizarGuardados();
-        
-        const originalText = btnSave.innerHTML;
-        btnSave.innerHTML = "✨ ¡Guardado en tu Bitácora! ✨";
-        btnSave.style.borderColor = "var(--success)";
-        setTimeout(() => {
-            btnSave.innerHTML = originalText;
-            btnSave.style.borderColor = "var(--border)";
-        }, 2000);
-    });
-
-    function renderizarGuardados() {
-        let guardados = JSON.parse(localStorage.getItem('oraculo_guardados')) || [];
+    function cargarBitacora() {
         if (!listaGuardados) return;
+        
+        let guardados = JSON.parse(localStorage.getItem('bitacoraCanaria')) || [];
+        listaGuardados.innerHTML = '';
 
         if (guardados.length === 0) {
-            emptyState.style.display = "block";
-            listaGuardados.innerHTML = "";
+            if (emptyState) emptyState.style.display = 'block';
             return;
         }
 
-        emptyState.style.display = "none";
-        listaGuardados.innerHTML = "";
+        if (emptyState) emptyState.style.display = 'none';
 
-        guardados.forEach((item, index) => {
+        guardados.reverse().forEach(item => {
             const li = document.createElement('li');
             li.className = 'saved-item';
-            li.style.background = 'rgba(255,255,255,0.02)';
-            li.style.border = '1px solid var(--border)';
-            li.style.padding = '16px';
-            li.style.borderRadius = '8px';
-            li.style.marginBottom = '12px';
-            li.style.display = 'flex';
-            li.style.justifyContent = 'space-between';
-            li.style.alignItems = 'center';
-
-            const numsFormateados = item.numeros.map(n => n.toString().padStart(2, '0')).join(' - ');
-
+            const numsFormateados = item.numeros.map(n => n.toString().padStart(2, '0')).join(', ');
+            
             li.innerHTML = `
                 <div>
-                    <span class="font-mono" style="font-size:0.75rem; color: var(--accent); text-transform:uppercase;">${item.juego} (${item.energia})</span>
-                    <p class="font-mono" style="font-size:1.1rem; font-weight:bold; margin-top:4px; color:#fff;">${numsFormateados}</p>
+                    <strong style="color: var(--accent); font-family: 'Cinzel', serif;">${item.juego}</strong> 
+                    <span style="color: var(--text-muted); font-size:0.8rem; margin-left: 8px;">✨ ${item.signo} • ${item.fecha}</span>
+                    <div class="font-mono" style="margin-top:6px; font-size:1.1rem; letter-spacing:1px;">🔮 [ ${numsFormateados} ]</div>
                 </div>
-                <div style="text-align: right; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-                    <span class="font-mono" style="font-size:0.7rem; color:var(--text-dark);">${item.hora}</span>
-                    <button class="btn-delete" data-index="${index}" style="background:transparent; border:none; color:#f87171; cursor:pointer; font-size:0.8rem;">Eliminar</button>
-                </div>
+                <button class="btn-delete" data-id="${item.id}">Borrar 🗑️</button>
             `;
             listaGuardados.appendChild(li);
         });
 
         document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                let guardados = JSON.parse(localStorage.getItem('oraculo_guardados')) || [];
-                guardados.splice(idx, 1);
-                localStorage.setItem('oraculo_guardados', JSON.stringify(guardados));
-                renderizarGuardados();
+                const idABorrar = parseInt(e.target.getAttribute('data-id'));
+                let guardadosActuales = JSON.parse(localStorage.getItem('bitacoraCanaria')) || [];
+                let filtrados = guardadosActuales.filter(item => item.id !== idABorrar);
+                localStorage.setItem('bitacoraCanaria', JSON.stringify(filtrados));
+                cargarBitacora();
             });
         });
     }
 
-    function añadirAlHistorialLateral(nombreJuego, numeros) {
-        const historyList = document.querySelector('.draw-history-list');
-        if (!historyList) return;
+    // ==========================================
+    // 5. INICIALIZACIÓN DE LA APP
+    // ==========================================
+    if (txtFecha) {
+        txtFecha.textContent = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
 
-        const li = document.createElement('li');
-        li.className = 'draw-item';
-        const horaStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const numsFormateados = numeros.map(n => n.toString().padStart(2, '0')).join(' - ');
-
-        li.innerHTML = `
-            <span class="font-mono" style="font-size:0.75rem; color:var(--text-muted);">${nombreJuego} [${horaStr}]</span>
-            <span class="font-mono" style="color: var(--accent); font-weight:bold;">${numsFormateados}</span>
+    const hotTab = document.getElementById('tab-hot');
+    const coldTab = document.getElementById('tab-cold');
+    if (hotTab) {
+        hotTab.innerHTML = `
+            <div class="stat-row"><div class="mini-ball">24</div><div class="progress-bar"><div class="progress-fill" style="width: 88%;"></div></div><span class="font-mono">88%</span></div>
+            <div class="stat-row"><div class="mini-ball">78</div><div class="progress-bar"><div class="progress-fill" style="width: 76%;"></div></div><span class="font-mono">76%</span></div>
         `;
-        
-        if (historyList.firstChild) {
-            historyList.insertBefore(li, historyList.firstChild);
-        } else {
-            historyList.appendChild(li);
-        }
+    }
+    if (coldTab) {
+        coldTab.innerHTML = `
+            <div class="stat-row"><div class="mini-ball cold">05</div><div class="progress-bar"><div class="progress-fill cold" style="width: 12%;"></div></div><span class="font-mono">12%</span></div>
+            <div class="stat-row"><div class="mini-ball cold">61</div><div class="progress-bar"><div class="progress-fill cold" style="width: 19%;"></div></div><span class="font-mono">19%</span></div>
+        `;
     }
 
-    // ==========================================
-    // 6. MENSAJES ROTATIVOS MÍSTICOS (AL REFRESCAR)
-    // ==========================================
-    function establecerMensajeMisticoYFecha() {
-        const fraseAleatoria = frasesMisticas[Math.floor(Math.random() * frasesMisticas.length)];
-        if(txtOraculo) txtOraculo.textContent = `“ ${fraseAleatoria} ”`;
-
-        const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
-        const hoy = new Date().toLocaleDateString('es-ES', opciones);
-        if(txtFecha) txtFecha.textContent = hoy;
-    }
-
-    // --- Ejecución Inicial ---
-    establecerMensajeMisticoYFecha();
-    calcularFaseLunarReal();
-    actualizarPrediccionConsejo();
-    renderizarGuardados();
+    consultarClimaReal();
+    cargarBitacora();
 });
