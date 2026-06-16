@@ -200,6 +200,44 @@
             overflow: visible !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
+                /* --- ESTILOS ADICIONALES PARA HORÓSCOPO Y BITÁCORA --- */
+        .saved-list-container {
+            list-style: none;
+            padding: 0;
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .saved-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            animation: popIn 0.3s ease-out;
+        }
+        .empty-state {
+            color: var(--text-dark);
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+        .btn-delete {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-delete:hover { text-decoration: underline; }
+
     </style>
 </head>
 
@@ -285,17 +323,35 @@
                     <button class="btn-option">Fuerza Volcánica</button>
                 </div>
 
-                <div class="form-row">
-                    <div>
-                        <label for="game-select">Juego ONCE</label>
-                        <select id="game-select">
-                            <option value="superonce">Super Once (11 Números)</option>
-                            <option value="triplex">Triplex (3 Dígitos)</option>
-                            <option value="midia">Mi Día (Fecha Completa)</option>
-                            <option value="dupla">Dupla (2 Dígitos)</option>
-                        </select>
-                    </div>
-                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+    <div>
+        <label for="game-select">Juego ONCE</label>
+        <select id="game-select">
+            <option value="superonce">Super Once (11 Números)</option>
+            <option value="triplex">Triplex (3 Dígitos)</option>
+            <option value="midia">Mi Día (Fecha Completa)</option>
+            <option value="dupla">Dupla (2 Dígitos)</option>
+        </select>
+    </div>
+    <div>
+        <label for="signo-select">Horóscopo Místico (Alineación Astral)</label>
+        <select id="signo-select">
+            <option value="aries">Aries ♈ (Fuego de Timanfaya)</option>
+            <option value="tauro">Tauro ♉ (Arena de Maspalomas)</option>
+            <option value="geminis">Géminis ♊ (Vientos Cruzados)</option>
+            <option value="cancer">Cáncer ♋ (Marea de las Calmas)</option>
+            <option value="leo">Leo ♌ (Sol de Doramas)</option>
+            <option value="virgo">Virgo ♍ (Tierra de la Geria)</option>
+            <option value="libra">Libra ♎ (Alisios Constantes)</option>
+            <option value="escorpio">Escorpio ♏ (Fuerza Volcánica)</option>
+            <option value="sagitario">Sagitario ♐ (Flecha de Nublo)</option>
+            <option value="capricornio">Capricornio ♑ (Roca del Teide)</option>
+            <option value="acuario">Acuario ♒ (Garoé Sagrado)</option>
+            <option value="piscis">Piscis ♓ (Océano Atlántico)</option>
+        </select>
+    </div>
+</div>
+
 
                 <button class="btn-primary" id="btn-generate">
                     ✨ Consultar el Oráculo
